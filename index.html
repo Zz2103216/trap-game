@@ -334,8 +334,8 @@ const LEVELS = [
       // 反向控制区
       // reverse_zone 已移除，改为陷阱金币触发
       // 弹跳陷阱——直接弹到天花板尖刺
-      {x:2650,y:440,w:40,h:20,type:'bounce', power:18},
-      {x:2650,y:0,w:80,h:20,type:'spike'}, // 天花板尖刺
+      {x:2650,y:440,w:40,h:20,type:'bounce', power:18, hidden:true, group:'bg_l2'},
+      {x:2650,y:0,w:80,h:20,type:'spike', hidden:true, group:'bg_l2'}, // 隐藏天花板尖刺
       // 假出口区域尖刺
       {x:2900,y:440,w:300,h:20,type:'hidden_spike', revealDist:100},
     ],
@@ -408,8 +408,8 @@ const LEVELS = [
       // 传送陷阱回到起点
       {x:1250,y:430,w:30,h:30,type:'teleport', targetX:80, targetY:380, disguise:'checkpoint'},
       // 弹跳垫——弹到尖刺天花板
-      {x:1500,y:440,w:40,h:20,type:'bounce', power:20},
-      {x:1380,y:0,w:600,h:20,type:'spike'}, // 超长天花板尖刺！
+      {x:1500,y:440,w:40,h:20,type:'bounce', power:20, hidden:true, group:'bg_l3a'},
+      {x:1380,y:0,w:600,h:20,type:'spike', hidden:true, group:'bg_l3a'}, // 隐藏超长天花板尖刺！
       // 假平台下面尖刺
       {x:1650,y:440,w:300,h:20,type:'spike'},
       // 反向控制区——超大
@@ -421,12 +421,12 @@ const LEVELS = [
       // 假出口
       {x:3140,y:370,w:30,h:30,type:'fake_exit', msg:'你以为结束了？天真！'},
       // 弹跳+天花板尖刺组合
-      {x:2900,y:440,w:40,h:20,type:'bounce', power:15},
-      {x:2850,y:0,w:200,h:20,type:'spike'}, // 天花板
+      {x:2900,y:440,w:40,h:20,type:'bounce', power:15, hidden:true, group:'bg_l3b'},
+      {x:2850,y:0,w:200,h:20,type:'spike', hidden:true, group:'bg_l3b'}, // 隐藏天花板
       {x:3300,y:440,w:60,h:20,type:'spike'},
     ],
     coins: [
-      {x:450,y:390,collected:false,type:'trap',spikeTriggered:false,spikeTimer:0,spikeHeight:0,spikeMaxH:160},
+      {x:450,y:390,collected:false,type:'normal'},
       {x:1800,y:370,collected:false,type:'trap',spikeTriggered:false,spikeTimer:0,spikeHeight:0,spikeMaxH:160},
       {x:2160,y:370,collected:false,type:'trap',spikeTriggered:false,spikeTimer:0,spikeHeight:0,spikeMaxH:160},
     ],
@@ -465,6 +465,7 @@ let levelWidth = 800;
 let levelHeight = 500;
 let realExit = null;
 let fakeExit = null;
+let levelTotalNormalCoins = 0;
 
 // 移动平台
 let movingPlatforms = [];
@@ -490,9 +491,12 @@ function initLevel(idx) {
   levelTraps = lv.traps.map(t => ({
     ...t,
     triggered: t.triggered !== undefined ? t.triggered : (t.type === 'teleport'),
-    falling: false, fallY: t.y, originalY: t.y, revealed: false
+    falling: false, fallY: t.y, originalY: t.y,
+    revealed: t.hidden ? false : (t.revealed || false),
+    hidden: t.hidden || false
   }));
   levelCoins = lv.coins.map(c => ({...c}));
+  levelTotalNormalCoins = levelCoins.filter(c => c.type === 'normal' || !c.type).length;
   levelSigns = lv.signs;
   realExit = lv.realExit;
   fakeExit = lv.fakeExit;
@@ -666,6 +670,8 @@ function update(dt) {
   // --- 检查尖刺/陷阱碰撞 ---
   for (const trap of levelTraps) {
     if (trap.type === 'spike' || trap.type === 'hidden_spike') {
+      // 隐藏尖刺（弹跳垫关联）：未揭示前不检测碰撞
+      if (trap.hidden && !trap.revealed) continue;
       const tBox = {x:trap.x, y:trap.y, w:trap.w, h:trap.h};
       if (trap.type === 'hidden_spike' && !trap.revealed) {
         const dist = Math.abs(p.x - (trap.x + trap.w/2));
@@ -704,6 +710,19 @@ function update(dt) {
         p.vy = -(trap.power || 15) * 60;
         p.onGround = false;
         playBeep(500, 0.08, 'triangle', 0.06);
+        // 揭示隐藏的弹跳垫和同组天花板尖刺
+        if (trap.hidden && !trap.revealed) {
+          trap.revealed = true;
+          // 揭示同组的隐藏尖刺
+          if (trap.group) {
+            for (const t2 of levelTraps) {
+              if (t2.hidden && t2.group === trap.group) {
+                t2.revealed = true;
+              }
+            }
+          }
+          spawnParticles(p.x, p.y - 20, 8, '#ff6600', 3);
+        }
       }
     }
 
@@ -856,6 +875,20 @@ function update(dt) {
   if (realExit) {
     const exBox = {x:realExit.x, y:realExit.y, w:realExit.w, h:realExit.h};
     if (rectsCollide(playerBox, exBox)) {
+      // 检查是否收集了所有真金币
+      const collectedNormals = levelCoins.filter(c => (c.type === 'normal' || !c.type) && c.collected).length;
+      const totalNormals = levelCoins.filter(c => c.type === 'normal' || !c.type).length;
+      if (collectedNormals < totalNormals) {
+        // 未收集完所有真金币 → 重新开始本关
+        initLevel(currentLevel);
+        deathCount++; // 不算死亡但计数提醒
+        document.getElementById('death-msg').textContent = '💡 需要收集所有真金币！';
+        document.getElementById('death-msg').style.opacity = '1';
+        deathMsgTimer = 2.0;
+        playBeep(150, 0.2, 'square', 0.06);
+        playBeep(100, 0.3, 'square', 0.06);
+        return;
+      }
       if (currentLevel < LEVELS.length - 1) {
         // 下一关
         currentLevel++;
@@ -969,6 +1002,8 @@ function draw() {
 
   // --- 尖刺 ---
   for (const trap of levelTraps) {
+    // 隐藏尖刺（弹跳垫关联）：未揭示前不渲染
+    if (trap.hidden && !trap.revealed) continue;
     if (trap.type === 'spike' || (trap.type === 'hidden_spike' && trap.revealed)) {
       const sx = trap.x - cameraX;
       const sy = trap.y - cameraY;
@@ -1028,22 +1063,37 @@ function draw() {
       ctx.fillText('💾', sx + trap.w/2, sy + trap.h/2 + 4);
     }
 
-    // 弹跳垫
+    // 弹跳垫（隐藏时显示为金币，触发后显示弹簧）
     if (trap.type === 'bounce') {
       const sx = trap.x - cameraX;
       const sy = trap.y - cameraY;
-      ctx.fillStyle = '#ff6600';
-      ctx.fillRect(sx, sy, trap.w, trap.h);
-      ctx.fillStyle = '#ff9933';
-      ctx.fillRect(sx, sy, trap.w, 4);
-      // 弹簧纹理
-      ctx.strokeStyle = '#cc5500';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 3; i++) {
-        const ly = sy + 6 + i * 5;
+      if (trap.hidden && !trap.revealed) {
+        // 隐藏状态：伪装成金币
+        const bob = Math.sin(elapsedTotal * 3 + trap.x) * 3;
+        ctx.fillStyle = '#ffd700';
+        ctx.strokeStyle = '#ffaa00';
         ctx.beginPath();
-        ctx.moveTo(sx+2, ly); ctx.lineTo(sx+trap.w/2, ly-2); ctx.lineTo(sx+trap.w-2, ly);
+        ctx.arc(sx + trap.w/2, sy - 4 + bob, 7, 0, Math.PI*2);
+        ctx.fill();
         ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(sx + trap.w/2 - 2, sy - 6 + bob, 2, 0, Math.PI*2);
+        ctx.fill();
+      } else {
+        // 触发后：显示弹簧
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(sx, sy, trap.w, trap.h);
+        ctx.fillStyle = '#ff9933';
+        ctx.fillRect(sx, sy, trap.w, 4);
+        ctx.strokeStyle = '#cc5500';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 3; i++) {
+          const ly = sy + 6 + i * 5;
+          ctx.beginPath();
+          ctx.moveTo(sx+2, ly); ctx.lineTo(sx+trap.w/2, ly-2); ctx.lineTo(sx+trap.w-2, ly);
+          ctx.stroke();
+        }
       }
     }
 
