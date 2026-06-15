@@ -442,6 +442,81 @@ const LEVELS = [
     playerStart: {x:80, y:380},
     realExit: {x:3625, y:295, w:35, h:40},
     fakeExit: {x:3140, y:370, w:30, h:30},
+  },
+
+  // ======== 第4关：深渊之桥 ========
+  {
+    name: '第4关：深渊之桥',
+    width: 3800, height: 520,
+    bgColor: '#050510',
+    platforms: [
+      // 左侧可见地面（出生点）
+      {x:0,y:420,w:350,h:40,type:'solid'},
+      // 深渊中的隐形踏脚石（全部hidden，踩到才现形3秒）
+      {x:370,y:415,w:45,h:18,type:'solid',hidden:true},
+      {x:500,y:410,w:45,h:18,type:'solid',hidden:true},
+      {x:630,y:415,w:45,h:18,type:'fake',hidden:true},   // 假！
+      {x:670,y:400,w:40,h:18,type:'solid',hidden:true},  // 紧挨假平台
+      {x:800,y:410,w:45,h:18,type:'solid',hidden:true},
+      {x:930,y:415,w:45,h:18,type:'solid',hidden:true},
+      {x:1060,y:410,w:45,h:18,type:'solid',hidden:true},
+      {x:1190,y:420,w:45,h:18,type:'fake',hidden:true},  // 假！
+      {x:1230,y:400,w:40,h:18,type:'solid',hidden:true},
+      {x:1360,y:415,w:45,h:18,type:'solid',hidden:true},
+      {x:1490,y:420,w:45,h:18,type:'solid',hidden:true}, // 传送陷阱伪装
+      {x:1530,y:405,w:40,h:18,type:'solid',hidden:true}, // 近路绕过传送
+      {x:1660,y:415,w:45,h:18,type:'solid',hidden:true},
+      {x:1790,y:410,w:45,h:18,type:'solid',hidden:true},
+      {x:1920,y:420,w:45,h:18,type:'fake',hidden:true},  // 假！
+      {x:1960,y:400,w:40,h:18,type:'solid',hidden:true},
+      {x:2090,y:415,w:45,h:18,type:'solid',hidden:true},
+      {x:2220,y:410,w:50,h:18,type:'solid',hidden:true}, // 弹跳垫位置
+      {x:2350,y:415,w:45,h:18,type:'solid',hidden:true},
+      {x:2480,y:420,w:45,h:18,type:'fake',hidden:true},  // 假！
+      {x:2520,y:405,w:40,h:18,type:'solid',hidden:true},
+      {x:2650,y:415,w:45,h:18,type:'solid',hidden:true},
+      {x:2780,y:410,w:45,h:18,type:'solid',hidden:true},
+      {x:2910,y:420,w:45,h:18,type:'fake',hidden:true},  // 假！
+      {x:2950,y:400,w:40,h:18,type:'solid',hidden:true},
+      {x:3080,y:410,w:45,h:18,type:'solid',hidden:true},
+      {x:3210,y:415,w:45,h:18,type:'solid',hidden:true},
+      {x:3340,y:420,w:45,h:18,type:'solid',hidden:true},
+      // 右侧可见地面（出口区）
+      {x:3450,y:420,w:350,h:40,type:'solid'},
+      // 底部死亡深渊（掉下去就死）
+    ],
+    traps: [
+      // 深渊中的隐藏尖刺——惩罚跳偏的玩家
+      {x:620,y:470,w:60,h:20,type:'spike',hidden:true},
+      {x:950,y:470,w:50,h:20,type:'spike',hidden:true},
+      {x:1180,y:470,w:60,h:20,type:'spike',hidden:true},
+      // 传送陷阱（看似普通平台，实际传回起点）
+      {x:1490,y:430,w:30,h:30,type:'teleport',targetX:100,targetY:380,hidden:true},
+      // 隐藏坠落方块
+      {x:1050,y:0,w:60,h:20,type:'falling_block',triggerX:1030,triggerW:200,hidden:true},
+      {x:1800,y:470,w:60,h:20,type:'spike',hidden:true},
+      // 弹跳垫（伪装成平台上的正常立足点）
+      {x:2230,y:455,w:40,h:15,type:'bounce',power:15,hidden:true,group:'bg_l4'},
+      {x:2100,y:0,w:70,h:20,type:'spike',hidden:true,group:'bg_l4'}, // 弹跳垫上方天花板尖刺
+      {x:2480,y:470,w:60,h:20,type:'spike',hidden:true},
+      {x:2700,y:0,w:60,h:20,type:'falling_block',triggerX:2680,triggerW:180,hidden:true},
+      {x:2880,y:470,w:70,h:20,type:'spike',hidden:true},
+      // 假出口
+      {x:3400,y:380,w:35,h:40,type:'fake_exit',msg:'深渊还没结束！',hidden:true},
+      {x:3200,y:470,w:60,h:20,type:'spike',hidden:true},
+      // 反向控制金币（隐藏版）下面的尖刺
+      {x:1750,y:470,w:60,h:20,type:'spike',hidden:true},
+    ],
+    coins: [
+      {x:1350,y:385,collected:false,type:'normal'},  // 真金币（必须收集）
+    ],
+    signs: [
+      {x:160,y:390,text:'前方的路看不见...',lying:false},
+      {x:3480,y:390,text:'出口在前',lying:false},
+    ],
+    playerStart: {x:80, y:380},
+    realExit: {x:3700, y:380, w:35, h:40},
+    fakeExit: {x:3400, y:380, w:35, h:40},
   }
 ];
 
@@ -487,14 +562,16 @@ function initLevel(idx) {
   levelWidth = lv.width;
   levelHeight = lv.height;
   levelPlatforms = lv.platforms.map(p => ({
-    ...p, crumbleTimer: 0, crumbled: false, fallen: false, shakeX: 0
+    ...p, crumbleTimer: 0, crumbled: false, fallen: false, shakeX: 0,
+    hidden: p.hidden || false, revealed: false, revealTimer: 0
   }));
   levelTraps = lv.traps.map(t => ({
     ...t,
     triggered: t.triggered !== undefined ? t.triggered : (t.type === 'teleport'),
     falling: false, fallY: t.y, originalY: t.y,
     revealed: t.hidden ? false : (t.revealed || false),
-    hidden: t.hidden || false
+    hidden: t.hidden || false,
+    revealTimer: 0
   }));
   levelCoins = lv.coins.map(c => ({...c}));
   levelTotalNormalCoins = levelCoins.filter(c => c.type === 'normal' || !c.type).length;
@@ -625,6 +702,20 @@ function update(dt) {
     return;
   }
 
+  // --- 隐身元素 revealTimer 递减 ---
+  for (const plat of levelPlatforms) {
+    if (plat.revealed && plat.revealTimer > 0 && !plat.crumbled) {
+      plat.revealTimer -= dt;
+      if (plat.revealTimer <= 0) plat.revealed = false;
+    }
+  }
+  for (const trap of levelTraps) {
+    if (trap.revealed && trap.revealTimer > 0) {
+      trap.revealTimer -= dt;
+      if (trap.revealTimer <= 0) trap.revealed = false;
+    }
+  }
+
   // --- 更新假平台 ---
   for (const plat of levelPlatforms) {
     if (plat.type === 'fake' && plat.crumbleTimer > 0 && !plat.crumbled) {
@@ -648,6 +739,7 @@ function update(dt) {
         {x:p.x-p.w/2, y:p.y-p.h, w:p.w, h:p.h},
         {x:fb.x, y:fb.fallY, w:fb.w, h:fb.h}
       )) {
+        if (fb.hidden) { fb.revealed = true; fb.revealTimer = 3.0; }
         killPlayer('被砸扁了！');
         return;
       }
@@ -663,6 +755,7 @@ function update(dt) {
         trap.falling = true;
         trap.fallY = trap.originalY;
         trap.fallSpeed = 100;
+        if (trap.hidden) { trap.revealed = true; trap.revealTimer = 3.0; }
         fallingBlocks.push(trap);
       }
     }
@@ -683,6 +776,7 @@ function update(dt) {
         }
       }
       if (rectsCollide({x:p.x-p.w/2, y:p.y-p.h, w:p.w, h:p.h}, tBox)) {
+        if (trap.hidden) { trap.revealed = true; trap.revealTimer = 3.0; }
         killPlayer('尖刺！');
         return;
       }
@@ -697,6 +791,7 @@ function update(dt) {
 
     if (trap.type === 'teleport' && trap.triggered) {
       if (rectsCollide({x:p.x-p.w/2, y:p.y-p.h, w:p.w, h:p.h}, trap)) {
+        if (trap.hidden) { trap.revealed = true; trap.revealTimer = 3.0; }
         p.x = trap.targetX;
         p.y = trap.targetY;
         p.vy = 0;
@@ -714,6 +809,7 @@ function update(dt) {
         // 揭示隐藏的弹跳垫和同组天花板尖刺
         if (trap.hidden && !trap.revealed) {
           trap.revealed = true;
+          trap.revealTimer = 3.0;
           // 揭示同组的隐藏尖刺
           if (trap.group) {
             for (const t2 of levelTraps) {
@@ -730,6 +826,7 @@ function update(dt) {
     if (trap.type === 'fake_exit') {
       const exBox = {x:trap.x, y:trap.y, w:trap.w, h:trap.h};
       if (rectsCollide({x:p.x-p.w/2, y:p.y-p.h, w:p.w, h:p.h}, exBox)) {
+        if (trap.hidden) { trap.revealed = true; trap.revealTimer = 3.0; }
         killPlayer(trap.msg || '假的出口！');
         return;
       }
@@ -763,6 +860,12 @@ function update(dt) {
 
       if (plat.type === 'fake' && plat.crumbleTimer <= 0) {
         plat.crumbleTimer = 0.2;
+      }
+      // 隐藏平台：踩到即揭示 3 秒
+      if (plat.hidden && !plat.revealed) {
+        plat.revealed = true;
+        plat.revealTimer = 3.0;
+        spawnParticles(p.x, p.y - p.h/2, 6, '#ffffff', 2);
       }
       if (plat.type === 'fake_wall') {
         continue; // 假墙：允许穿过但站上去不阻挡
@@ -967,11 +1070,17 @@ function draw() {
   // --- 平台 ---
   for (const plat of levelPlatforms) {
     if (plat.type === 'fake' && plat.crumbled) continue;
+    // 隐藏平台：未揭示不渲染
+    if (plat.hidden && !plat.revealed) continue;
     const sx = plat.x + (plat.shakeX||0) - cameraX;
     const sy = plat.y - cameraY;
     if (sx + plat.w < -10 || sx > W + 10 || sy + plat.h < -10 || sy > H + 10) continue;
 
     ctx.save();
+    // 隐藏平台淡出效果
+    if (plat.hidden && plat.revealed && plat.revealTimer < 0.5) {
+      ctx.globalAlpha = Math.max(0.15, plat.revealTimer / 0.5);
+    }
     if (plat.type === 'invisible_block') {
       // 隐形墙：完全看不到
       ctx.restore();
@@ -1003,9 +1112,13 @@ function draw() {
 
   // --- 尖刺 ---
   for (const trap of levelTraps) {
-    // 隐藏尖刺（弹跳垫关联）：未揭示前不渲染
+    // 隐藏陷阱：未揭示前不渲染
     if (trap.hidden && !trap.revealed) continue;
     if (trap.type === 'spike' || (trap.type === 'hidden_spike' && trap.revealed)) {
+      ctx.save();
+      if (trap.hidden && trap.revealed && trap.revealTimer < 0.5) {
+        ctx.globalAlpha = Math.max(0.15, trap.revealTimer / 0.5);
+      }
       const sx = trap.x - cameraX;
       const sy = trap.y - cameraY;
       if (sx + trap.w < -10 || sx > W + 10) continue;
@@ -1030,10 +1143,15 @@ function draw() {
         ctx.fillStyle = 'rgba(255,0,0,0.2)';
         ctx.fillRect(sx - 2, sy - 2, trap.w + 4, trap.h + 4);
       }
+      ctx.restore();
     }
 
     // 坠落方块
     if (trap.type === 'falling_block') {
+      ctx.save();
+      if (trap.hidden && trap.revealed && trap.revealTimer < 0.5) {
+        ctx.globalAlpha = Math.max(0.15, trap.revealTimer / 0.5);
+      }
       const sx = trap.x - cameraX;
       const sy = (trap.falling ? trap.fallY : trap.y) - cameraY;
       ctx.fillStyle = '#8b4513';
@@ -1046,10 +1164,15 @@ function draw() {
       ctx.moveTo(sx+2, sy+2); ctx.lineTo(sx+trap.w-4, sy+trap.h-4);
       ctx.moveTo(sx+trap.w/2, sy); ctx.lineTo(sx+trap.w/2, sy+trap.h);
       ctx.stroke();
+      ctx.restore();
     }
 
     // 传送陷阱
     if (trap.type === 'teleport') {
+      ctx.save();
+      if (trap.hidden && trap.revealed && trap.revealTimer < 0.5) {
+        ctx.globalAlpha = Math.max(0.15, trap.revealTimer / 0.5);
+      }
       const sx = trap.x - cameraX;
       const sy = trap.y - cameraY;
       // 看起来像存档点——紫色旋涡
@@ -1062,10 +1185,15 @@ function draw() {
       ctx.font = '10px monospace';
       ctx.textAlign = 'center';
       ctx.fillText('💾', sx + trap.w/2, sy + trap.h/2 + 4);
+      ctx.restore();
     }
 
     // 弹跳垫（隐藏时显示为金币，触发后显示弹簧）
     if (trap.type === 'bounce') {
+      ctx.save();
+      if (trap.hidden && trap.revealed && trap.revealTimer < 0.5) {
+        ctx.globalAlpha = Math.max(0.15, trap.revealTimer / 0.5);
+      }
       const sx = trap.x - cameraX;
       const sy = trap.y - cameraY;
       if (trap.hidden && !trap.revealed) {
@@ -1102,6 +1230,10 @@ function draw() {
 
     // 假出口
     if (trap.type === 'fake_exit') {
+      ctx.save();
+      if (trap.hidden && trap.revealed && trap.revealTimer < 0.5) {
+        ctx.globalAlpha = Math.max(0.15, trap.revealTimer / 0.5);
+      }
       const sx = trap.x - cameraX;
       const sy = trap.y - cameraY;
       const glow = Math.sin(elapsedTotal * 4) * 0.3 + 0.7;
@@ -1114,6 +1246,7 @@ function draw() {
       ctx.font = '10px monospace';
       ctx.textAlign = 'center';
       ctx.fillText('EXIT', sx + trap.w/2, sy + trap.h/2 + 3);
+      ctx.restore();
     }
   }
 
