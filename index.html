@@ -392,10 +392,11 @@ const LEVELS = [
       {x:2980,y:350,w:50,h:20,type:'solid'},
       // 假出口区域
       {x:3100,y:400,w:100,h:20,type:'solid'},
-      // 真出口
-      {x:3400,y:300,w:80,h:20,type:'solid'},
-      {x:3540,y:280,w:80,h:20,type:'solid'},
-      {x:3680,y:300,w:60,h:20,type:'solid'},
+      // 真出口路径（阶梯式下降，可到达）
+      {x:3240,y:375,w:50,h:20,type:'solid'},
+      {x:3340,y:348,w:50,h:20,type:'solid'},
+      {x:3450,y:320,w:50,h:20,type:'solid'},
+      {x:3580,y:300,w:80,h:20,type:'solid'},
       // 底部
       {x:0,y:460,w:3800,h:40,type:'solid'},
     ],
@@ -439,7 +440,7 @@ const LEVELS = [
       {x:3100,y:370,text:'🏁 终点！你成功了！',lying:true},
     ],
     playerStart: {x:80, y:380},
-    realExit: {x:3710, y:260, w:35, h:40},
+    realExit: {x:3625, y:260, w:35, h:40},
     fakeExit: {x:3140, y:370, w:30, h:30},
   }
 ];
