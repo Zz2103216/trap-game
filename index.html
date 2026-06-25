@@ -517,6 +517,64 @@ const LEVELS = [
     playerStart: {x:80, y:380},
     realExit: {x:3700, y:380, w:35, h:40},
     fakeExit: {x:3400, y:380, w:35, h:40},
+    secretExit: {x:10, y:380, w:30, h:40, found:false},
+  },
+
+  // ======== 第5关：最后的试炼 ========
+  {
+    name: '第5关：最后的试炼',
+    width: 2400, height: 500,
+    bgColor: '#0d0d17',
+    platforms: [
+      {x:40,y:420,w:120,h:20,type:'solid'},
+      {x:220,y:410,w:60,h:20,type:'solid'},
+      {x:340,y:430,w:60,h:20,type:'solid'},
+      {x:460,y:410,w:60,h:20,type:'solid'},
+      {x:580,y:430,w:60,h:20,type:'fake',hidden:true},
+      {x:650,y:415,w:40,h:20,type:'solid',hidden:true},
+      {x:750,y:420,w:60,h:20,type:'solid'},
+      {x:870,y:400,w:50,h:20,type:'solid'},
+      {x:980,y:420,w:60,h:20,type:'fake'},
+      {x:1050,y:405,w:40,h:20,type:'solid'},
+      {x:1150,y:420,w:70,h:20,type:'solid'},
+      {x:1280,y:410,w:50,h:20,type:'solid'},
+      {x:1390,y:430,w:60,h:20,type:'fake'},
+      {x:1460,y:415,w:40,h:20,type:'solid'},
+      {x:1560,y:420,w:60,h:20,type:'solid'},
+      {x:1680,y:400,w:50,h:20,type:'solid'},
+      {x:1800,y:420,w:60,h:20,type:'fake'},
+      {x:1870,y:405,w:40,h:20,type:'solid'},
+      {x:1980,y:420,w:70,h:20,type:'solid'},
+      {x:2110,y:410,w:50,h:20,type:'solid'},
+      {x:2220,y:420,w:60,h:20,type:'solid'}, // 出口平台
+      {x:0,y:460,w:2400,h:40,type:'solid'},
+    ],
+    traps: [
+      {x:350,y:440,w:60,h:20,type:'spike'},
+      {x:580,y:440,w:200,h:20,type:'spike'},
+      {x:990,y:440,w:100,h:20,type:'spike'},
+      {x:1150,y:0,w:60,h:20,type:'falling_block',triggerX:1130,triggerW:200},
+      {x:1400,y:440,w:100,h:20,type:'spike'},
+      {x:1550,y:0,w:70,h:20,type:'falling_block',triggerX:1530,triggerW:180},
+      {x:1680,y:0,w:60,h:20,type:'spike'},
+      {x:1810,y:440,w:100,h:20,type:'spike'},
+      {x:1950,y:440,w:60,h:20,type:'hidden_spike',revealDist:70},
+      {x:2100,y:440,w:60,h:20,type:'spike'},
+    ],
+    coins: [
+      {x:870,y:370,collected:false,type:'normal'},
+      {x:1280,y:380,collected:false,type:'trap',spikeTriggered:false,spikeTimer:0,spikeHeight:0,spikeMaxH:160},
+      {x:1800,y:370,collected:false,type:'trap',spikeTriggered:false,spikeTimer:0,spikeHeight:0,spikeMaxH:160},
+    ],
+    signs: [
+      {x:200,y:380,text:'最后一段路了...',lying:false},
+      {x:750,y:390,text:'小心假平台',lying:false},
+      {x:1400,y:400,text:'快到了！',lying:true},
+      {x:2100,y:390,text:'🏁 真正的终点',lying:false},
+    ],
+    playerStart: {x:80, y:380},
+    realExit: {x:2240, y:380, w:35, h:40},
+    fakeExit: null,
   }
 ];
 
@@ -541,6 +599,7 @@ let levelWidth = 800;
 let levelHeight = 500;
 let realExit = null;
 let fakeExit = null;
+let secretExit = null;
 let levelTotalNormalCoins = 0;
 
 // 移动平台
@@ -578,6 +637,7 @@ function initLevel(idx) {
   levelSigns = lv.signs;
   realExit = lv.realExit;
   fakeExit = lv.fakeExit;
+  secretExit = lv.secretExit || null;
   player.startX = lv.playerStart.x;
   player.startY = lv.playerStart.y;
   player.reset();
@@ -1011,6 +1071,27 @@ function update(dt) {
     }
   }
 
+  // --- 检查隐藏密道出口 ---
+  if (secretExit && !secretExit.found) {
+    const sxBox = {x:secretExit.x, y:secretExit.y, w:secretExit.w, h:secretExit.h};
+    if (rectsCollide(playerBox, sxBox)) {
+      secretExit.found = true;
+      if (currentLevel < LEVELS.length - 1) {
+        currentLevel++;
+        initLevel(currentLevel);
+        sfxWin();
+        spawnParticles(secretExit.x + secretExit.w/2, secretExit.y + secretExit.h/2, 20, '#ff00ff', 5);
+      } else {
+        gameWin = true;
+        levelComplete = true;
+        sfxWin();
+        spawnParticles(secretExit.x + secretExit.w/2, secretExit.y + secretExit.h/2, 40, '#ffd700', 6);
+        document.getElementById('level-title').textContent = '🎉 恭喜通关！';
+        document.getElementById('death-count').textContent = `总共死了 ${deathCount} 次`;
+      }
+    }
+  }
+
   // --- 相机 ---
   const targetCX = p.x - W/2;
   const targetCY = p.y - H/2;
@@ -1331,6 +1412,23 @@ function draw() {
     ctx.font = 'bold 12px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('🚪', sx + realExit.w/2, sy + realExit.h/2 + 4);
+  }
+
+  // --- 隐藏密道出口 ---
+  if (secretExit && !secretExit.found) {
+    const sx = secretExit.x - cameraX;
+    const sy = secretExit.y - cameraY;
+    const pulse = Math.sin(elapsedTotal * 2) * 0.15 + 0.15;
+    ctx.fillStyle = `rgba(180,80,255,${pulse})`;
+    ctx.fillRect(sx, sy, secretExit.w, secretExit.h);
+    ctx.strokeStyle = 'rgba(200,100,255,0.4)';
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(sx, sy, secretExit.w, secretExit.h);
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('?', sx + secretExit.w/2, sy + secretExit.h/2 + 3);
   }
 
   // --- 玩家 ---
