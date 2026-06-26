@@ -1414,22 +1414,6 @@ function draw() {
     ctx.fillText('🚪', sx + realExit.w/2, sy + realExit.h/2 + 4);
   }
 
-  // --- 隐藏密道出口 ---
-  if (secretExit && !secretExit.found) {
-    const sx = secretExit.x - cameraX;
-    const sy = secretExit.y - cameraY;
-    const pulse = Math.sin(elapsedTotal * 2) * 0.15 + 0.15;
-    ctx.fillStyle = `rgba(180,80,255,${pulse})`;
-    ctx.fillRect(sx, sy, secretExit.w, secretExit.h);
-    ctx.strokeStyle = 'rgba(200,100,255,0.4)';
-    ctx.setLineDash([3, 3]);
-    ctx.strokeRect(sx, sy, secretExit.w, secretExit.h);
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('?', sx + secretExit.w/2, sy + secretExit.h/2 + 3);
-  }
 
   // --- 玩家 ---
   const p = player;
