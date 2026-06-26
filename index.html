@@ -1079,16 +1079,18 @@ function update(dt) {
     const sxBox = {x:secretExit.x, y:secretExit.y, w:secretExit.w, h:secretExit.h};
     if (rectsCollide(playerBox, sxBox)) {
       secretExit.found = true;
+      // 先保存坐标，initLevel 会覆盖 secretExit
+      const sx = secretExit.x, sy = secretExit.y, sw = secretExit.w, sh = secretExit.h;
       if (currentLevel < LEVELS.length - 1) {
         currentLevel++;
         initLevel(currentLevel);
         sfxWin();
-        spawnParticles(secretExit.x + secretExit.w/2, secretExit.y + secretExit.h/2, 20, '#ff00ff', 5);
+        spawnParticles(sx + sw/2, sy + sh/2, 20, '#ff00ff', 5);
       } else {
         gameWin = true;
         levelComplete = true;
         sfxWin();
-        spawnParticles(secretExit.x + secretExit.w/2, secretExit.y + secretExit.h/2, 40, '#ffd700', 6);
+        spawnParticles(sx + sw/2, sy + sh/2, 40, '#ffd700', 6);
         document.getElementById('level-title').textContent = '🎉 恭喜通关！';
         document.getElementById('death-count').textContent = `总共死了 ${deathCount} 次`;
       }
