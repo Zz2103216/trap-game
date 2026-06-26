@@ -589,8 +589,9 @@ let currentDeathMsg = '';
 let deathFlash = 0;
 let gameStarted = false;
 let gameWin = false;
+let menuState = 0; // 0=主菜单, 1=选关, 2=游戏中
 let mouseX = 0, mouseY = 0, mouseDown = false;
-let menuHover = 0; // 0=none, 1=start, 2=skin, 3=shop
+let menuHover = 0; // 按钮悬浮ID
 
 // 关卡运行时状态
 let levelPlatforms = []; // {x,y,w,h,type, crumbleTimer, crumbled, fallen}
@@ -660,7 +661,7 @@ let lastTime = 0;
 let elapsedTotal = 0;
 
 function update(dt) {
-  if (!gameStarted || levelComplete || gameWin) return;
+  if (menuState !== 2 || levelComplete || gameWin) return;
   if (dt > 0.05) dt = 0.05; // 防止大帧跳跃
 
   // 振动衰减
@@ -1126,6 +1127,9 @@ function killPlayer(msg) {
 
 // --- 渲染 ---
 function draw() {
+  // 菜单/选关时不渲染关卡
+  if (menuState !== 2) return;
+
   const lv = LEVELS[currentLevel];
   const shakeX = (Math.random() - 0.5) * shakeAmount;
   const shakeY = (Math.random() - 0.5) * shakeAmount;
@@ -1480,12 +1484,17 @@ function draw() {
 }
 
 function drawUI() {
-  // 关卡标题
-  document.getElementById('level-title').textContent = LEVELS[currentLevel].name;
-  document.getElementById('death-count').textContent = `死亡: ${deathCount}`;
+  // 关卡标题（仅游戏中显示）
+  if (menuState === 2) {
+    document.getElementById('level-title').textContent = LEVELS[currentLevel].name;
+    document.getElementById('death-count').textContent = `死亡: ${deathCount}`;
+  } else {
+    document.getElementById('level-title').textContent = '';
+    document.getElementById('death-count').textContent = '';
+  }
 
   // ========== 主菜单 ==========
-  if (!gameStarted) {
+  if (menuState === 0) {
     // 纯黑背景
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
@@ -1612,6 +1621,77 @@ function drawUI() {
     ctx.fillText('v2.0', W - 15, H - 10);
   }
 
+  // ========== 选关画面 ==========
+  if (menuState === 1) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    // 标题
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 26px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('选择关卡', W/2, 70);
+
+    ctx.fillStyle = '#555';
+    ctx.font = '12px monospace';
+    ctx.fillText('选择一个关卡开始挑战', W/2, 100);
+
+    // 关卡网格 (2行)
+    const lvNames = [
+      '信任的第一步', '什么都别信', '疯狂深渊',
+      '深渊之桥', '最后的试炼'
+    ];
+    const lvColors = ['#00cc66', '#cc8800', '#cc4444', '#8844cc', '#4488ff'];
+    const cols = 3, cardW = 160, cardH = 100;
+    const startX = (W - cols * cardW - (cols - 1) * 30) / 2;
+    const startY = 140;
+
+    for (let i = 0; i < 5; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cx = startX + col * (cardW + 30);
+      const cy = startY + row * (cardH + 25);
+      const hovered = menuHover === 10 + i;
+
+      // 卡片背景
+      ctx.fillStyle = hovered ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)';
+      ctx.fillRect(cx, cy, cardW, cardH);
+
+      // 边框
+      ctx.strokeStyle = hovered ? lvColors[i] : 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = hovered ? 2 : 1;
+      ctx.strokeRect(cx, cy, cardW, cardH);
+
+      // 顶部色条
+      ctx.fillStyle = lvColors[i];
+      ctx.fillRect(cx, cy, cardW, 3);
+
+      // 关卡编号
+      ctx.fillStyle = lvColors[i];
+      ctx.font = 'bold 36px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(i + 1, cx + cardW/2, cy + 48);
+
+      // 关卡名
+      ctx.fillStyle = hovered ? '#fff' : '#aaa';
+      ctx.font = '12px monospace';
+      ctx.fillText(lvNames[i], cx + cardW/2, cy + 72);
+    }
+
+    // 返回按钮
+    const backX = W/2 - 70, backY = 420, backW = 140, backH = 36;
+    const backHover = menuHover === 99;
+    ctx.fillStyle = backHover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)';
+    ctx.fillRect(backX, backY, backW, backH);
+    ctx.strokeStyle = backHover ? '#888' : 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(backX, backY, backW, backH);
+    ctx.fillStyle = backHover ? '#fff' : '#888';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('← 返回主菜单', W/2, backY + 25);
+  }
+
   if (gameWin) {
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(0, 0, W, H);
@@ -1636,7 +1716,7 @@ function gameLoop(timestamp) {
   lastTime = timestamp;
   elapsedTotal += dt;
 
-  if (gameStarted && !gameWin) {
+  if (menuState === 2 && !gameWin) {
     update(dt);
   }
 
@@ -1647,13 +1727,14 @@ function gameLoop(timestamp) {
 }
 
 // --- 初始化 ---
-function startGame() {
+function startGame(levelIdx) {
   initAudio();
+  menuState = 2;
   gameStarted = true;
-  currentLevel = 0;
+  currentLevel = (levelIdx !== undefined) ? levelIdx : 0;
   deathCount = 0;
   gameWin = false;
-  initLevel(0);
+  initLevel(currentLevel);
   document.getElementById('death-msg').style.opacity = '0';
 }
 
@@ -1665,7 +1746,7 @@ canvas.addEventListener('mousemove', (e) => {
   mouseX = (e.clientX - rect.left) * scaleX;
   mouseY = (e.clientY - rect.top) * scaleY;
   // 检测按钮悬浮
-  if (!gameStarted) {
+  if (menuState === 0) {
     const btnX = 500, btnW = 220, btnH = 48;
     menuHover = 0;
     if (mouseX >= btnX && mouseX <= btnX + btnW) {
@@ -1677,26 +1758,39 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 canvas.addEventListener('click', (e) => {
-  if (gameStarted || gameWin) return;
-  if (menuHover === 1) startGame();
-  else if (menuHover === 2) {
-    // 皮肤——敬请期待
-    document.getElementById('death-msg').textContent = '🎨 皮肤系统即将上线！';
-    document.getElementById('death-msg').style.opacity = '1';
-    setTimeout(() => { document.getElementById('death-msg').style.opacity = '0'; }, 1500);
-  } else if (menuHover === 3) {
-    // 商城——敬请期待
-    document.getElementById('death-msg').textContent = '🛒 商城即将开放！';
-    document.getElementById('death-msg').style.opacity = '1';
-    setTimeout(() => { document.getElementById('death-msg').style.opacity = '0'; }, 1500);
+  if (gameWin) return;
+  if (menuState === 0) {
+    // 主菜单点击
+    if (menuHover === 1) { menuState = 1; menuHover = 0; }
+    else if (menuHover === 2) {
+      document.getElementById('death-msg').textContent = '🎨 皮肤系统即将上线！';
+      document.getElementById('death-msg').style.opacity = '1';
+      setTimeout(() => { document.getElementById('death-msg').style.opacity = '0'; }, 1500);
+    } else if (menuHover === 3) {
+      document.getElementById('death-msg').textContent = '🛒 商城即将开放！';
+      document.getElementById('death-msg').style.opacity = '1';
+      setTimeout(() => { document.getElementById('death-msg').style.opacity = '0'; }, 1500);
+    }
+  } else if (menuState === 1) {
+    // 选关点击
+    if (menuHover >= 10 && menuHover <= 14) {
+      startGame(menuHover - 10);
+    } else if (menuHover === 99) {
+      menuState = 0; // 返回主菜单
+    }
   }
 });
 
 // 键盘开始
 window.addEventListener('keydown', (e) => {
-  if (!gameStarted) { startGame(); return; }
+  if (menuState === 0) { menuState = 1; return; }
+  if (menuState === 1) {
+    if (e.key === 'Escape') { menuState = 0; }
+    return; // 选关画面中按键不开始
+  }
   if (gameWin && e.key === 'r') {
     gameWin = false;
+    menuState = 0;
     currentLevel = 0;
     deathCount = 0;
     initLevel(0);
