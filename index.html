@@ -1498,13 +1498,12 @@ function drawUI() {
       ctx.fillRect(px, py, 2, 2);
     }
 
-    // === 左侧：像素角色特写 ===
-    const charCX = 200;
-    const charCY = 220 + Math.sin(elapsedTotal * 1.5) * 25; // 上下飘动
-    const scale = 5; // 5倍缩放
-    const pw = 12, ph = 16; // 原始像素尺寸
+    // === 左侧：超大像素角色特写（只露半张脸在左边） ===
+    const charCX = -30;
+    const charCY = 250 + Math.sin(elapsedTotal * 1.2) * 15; // 微微飘动
+    const scale = 18; // 18倍缩放
+    const pw = 12, ph = 16;
 
-    // 像素角色数据 (12x16, 0=透明, 1=主色, 2=亮色, 3=暗色, 4=眼白, 5=瞳孔)
     const sprite = [
       [0,0,0,0,1,1,1,1,0,0,0,0],
       [0,0,1,1,2,2,2,2,1,1,0,0],
@@ -1531,28 +1530,29 @@ function drawUI() {
       for (let col = 0; col < pw; col++) {
         const c = sprite[row][col];
         if (c === 0) continue;
+        const px = charCX - (pw * scale) / 2 + col * scale;
+        const py = charCY - (ph * scale) / 2 + row * scale;
+        // 只渲染在画布内的部分
+        if (px + scale < 0 || px > W) continue;
         ctx.fillStyle = palette[c];
-        ctx.fillRect(
-          charCX - (pw * scale) / 2 + col * scale,
-          charCY - (ph * scale) / 2 + row * scale,
-          scale, scale
-        );
+        ctx.fillRect(px, py, scale, scale);
       }
     }
 
-    // 角色光晕
-    const glow = ctx.createRadialGradient(charCX, charCY, 30, charCX, charCY, 100);
-    glow.addColorStop(0, 'rgba(68,136,255,0.15)');
+    // 大光晕
+    const glow = ctx.createRadialGradient(60, charCY, 40, 80, charCY, 280);
+    glow.addColorStop(0, 'rgba(68,136,255,0.12)');
+    glow.addColorStop(0.5, 'rgba(68,136,255,0.04)');
     glow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = glow;
-    ctx.fillRect(charCX - 100, charCY - 100, 200, 200);
+    ctx.fillRect(-50, charCY - 200, 350, 400);
 
     // === 右侧分隔线 ===
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 8]);
     ctx.beginPath();
-    ctx.moveTo(410, 60); ctx.lineTo(410, H - 60);
+    ctx.moveTo(420, 50); ctx.lineTo(420, H - 50);
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -1560,15 +1560,15 @@ function drawUI() {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 28px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('陷阱闯关', 600, 130);
+    ctx.fillText('陷阱闯关', 610, 130);
 
     // 副标题
     ctx.fillStyle = '#666';
     ctx.font = '12px monospace';
-    ctx.fillText('别相信任何东西', 600, 155);
+    ctx.fillText('别相信任何东西', 610, 155);
 
     // === 右侧按钮 ===
-    const btnX = 490, btnW = 220, btnH = 48;
+    const btnX = 500, btnW = 220, btnH = 48;
     const btns = [
       { y: 200, label: '▶  开始游戏', id: 1, color: '#00cc66' },
       { y: 265, label: '🎨 皮  肤', id: 2, color: '#cc8800' },
@@ -1666,7 +1666,7 @@ canvas.addEventListener('mousemove', (e) => {
   mouseY = (e.clientY - rect.top) * scaleY;
   // 检测按钮悬浮
   if (!gameStarted) {
-    const btnX = 490, btnW = 220, btnH = 48;
+    const btnX = 500, btnW = 220, btnH = 48;
     menuHover = 0;
     if (mouseX >= btnX && mouseX <= btnX + btnW) {
       if (mouseY >= 200 && mouseY <= 200 + btnH) menuHover = 1;
